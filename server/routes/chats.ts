@@ -1,5 +1,5 @@
 import { supabase } from "../db/db";
-import { ChatType } from "../db/types";
+import { ChatType } from "../types";
 
 export async function createChat(
   userId: string,

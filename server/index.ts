@@ -3,7 +3,11 @@ import cors from "cors";
 import express, { Request, Response } from "express";
 import { createUser } from "./routes/users";
 import { getChatsByUserId, createChat } from "./routes/chats";
-import { getMessagesByChatId, createMessage } from "./routes/messages";
+import {
+  getMessagesByChatId,
+  createMessage,
+  generateAssistantMessage,
+} from "./routes/messages";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -87,9 +91,22 @@ app.post("/chats/:id/messages", async (req: Request, res: Response) => {
   const content = body.content;
 
   try {
-    const message = await createMessage(chatId, role, content);
-    res.status(201).json(message);
+    const userMessage = await createMessage(chatId, role, content);
+    if (!userMessage) {
+      return res.status(500).json({ message: "Error creating user message" });
+    }
+
+    const assistantMessage = await generateAssistantMessage(chatId);
+    if (!assistantMessage) {
+      return res
+        .status(500)
+        .json({ message: "Error generating assistant message" });
+    }
+
+    const messages = await getMessagesByChatId(chatId);
+    res.status(200).json(messages);
   } catch (err) {
+    console.error("Error in /chats/:id/messages POST:", err);
     res.status(500).json({ message: "Error creating message" });
   }
 });

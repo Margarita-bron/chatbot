@@ -38,21 +38,6 @@ function App() {
       .catch((err) => console.error("Error creating chat:", err));
   };
 
-  const sendMessage = (content: string) => {
-    if (!currentChatId || !content.trim()) return;
-
-    fetch(`http://localhost:5000/chats/${currentChatId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "user", content }),
-    })
-      .then((res) => res.json())
-      .then((message) => {
-        setMessages((prev) => [...prev, message]);
-      })
-      .catch((err) => console.error("Error sending message:", err));
-  };
-
   useEffect(() => {
     if (!currentChatId) return;
 
@@ -70,6 +55,21 @@ function App() {
 
     getMessages();
   }, [currentChatId]);
+
+  const sendMessage = (content: string) => {
+    if (!currentChatId || !content.trim()) return;
+
+    fetch(`http://localhost:5000/chats/${currentChatId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "user", content }),
+    })
+      .then((res) => res.json())
+      .then((messages: MessageType[]) => {
+        setMessages(messages);
+      })
+      .catch((err) => console.error("Error sending message:", err));
+  };
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
