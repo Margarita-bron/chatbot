@@ -1,17 +1,21 @@
 import "dotenv/config";
 import cors from "cors";
 import express, { Request, Response } from "express";
-import { createUser } from "./routes/users";
-import { getChatsByUserId, createChat } from "./routes/chats";
+import { createUser } from "./services/users";
+import { getChatsByUserId, createChat } from "./services/chats";
 import {
   getMessagesByChatId,
   createMessage,
   generateAssistantMessage,
-} from "./routes/messages";
+} from "./services/messages";
+import cookieParser from "cookie-parser";
+import auth from "./routes/auth";
+import fileRouter from "./routes/files";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.use(cookieParser());
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -20,6 +24,8 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/auth", auth);
+app.use("/files", fileRouter);
 
 app.post("/users", async (req: Request, res: Response) => {
   const { email } = req.body as { email?: string };
@@ -80,35 +86,24 @@ app.get("/chats/:id/messages", async (req: Request, res: Response) => {
 });
 
 app.post("/chats/:id/messages", async (req: Request, res: Response) => {
-  const chatId = req.params.id;
-  const body = req.body as { role?: "user" | "assistant"; content?: string };
+  const id = req.params.id;
+  const { role, content, imageUrl } = req.body;
+  const userMsg = await createMessage(id, role as "user", content);
 
-  if (!body.content) {
-    return res.status(400).json({ message: "content is required" });
+  if (!userMsg) {
+    return res.status(400).json({ error: "Unable to create user message" });
   }
 
-  const role: "user" | "assistant" = body.role ?? "user";
-  const content = body.content;
+  const assistantContent = await generateAssistantMessage(id, imageUrl);
 
-  try {
-    const userMessage = await createMessage(chatId, role, content);
-    if (!userMessage) {
-      return res.status(500).json({ message: "Error creating user message" });
-    }
+  const assistantMsg = await createMessage(id, "assistant", assistantContent);
 
-    const assistantMessage = await generateAssistantMessage(chatId);
-    if (!assistantMessage) {
-      return res
-        .status(500)
-        .json({ message: "Error generating assistant message" });
-    }
-
-    const messages = await getMessagesByChatId(chatId);
-    res.status(200).json(messages);
-  } catch (err) {
-    console.error("Error in /chats/:id/messages POST:", err);
-    res.status(500).json({ message: "Error creating message" });
+  if (!assistantMsg) {
+    console.error("Error saving assistant message");
   }
+
+  const messages = await getMessagesByChatId(id);
+  res.json(messages);
 });
 
 app.listen(PORT, () => {
