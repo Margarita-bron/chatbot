@@ -1,67 +1,21 @@
-import { useState, useEffect } from "react";
-import type { UserType } from "./types/types";
 import AuthScreen from "./screens/AuthScreen";
 import ChatBotScreen from "./screens/ChatBotScreen";
 import "./App.css";
 import "./index.css";
+import { AuthProvider, useAuth } from "./provider/useAuth";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import NotFound from "./screens/NotFound";
 
-//const API_BASE = "https://chatbot-no4u.onrender.com";
-const API_BASE = "http://localhost:5000";
+export const API_BASE = "https://chatbot-no4u.onrender.com";
+//export const API_BASE = "http://localhost:5000";
 
 function App() {
-  const [user, setUser] = useState<UserType | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_BASE}/auth/me`, {
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          setUser(null);
-          return;
-        }
-
-        const userData = await res.json();
-        setUser(userData);
-      } catch (err) {
-        console.error("Auth check error:", err);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const logout = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("Logout error:", err);
-        return;
-      }
-
-      setUser(null);
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-  };
-
+  const { user, loading, logout, setUser } = useAuth();
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
+  /*if (!user) {
     return (
       <div className="hero-container">
         <div className="hero-content">
@@ -73,14 +27,26 @@ function App() {
         </div>
       </div>
     );
-  }
+  }*/
 
   return (
-    <div>
+    /* <div>
       <main>
         <ChatBotScreen user={user} />
       </main>
-    </div>
+    </div>*/
+
+    <AuthProvider>
+      {" "}
+      <BrowserRouter>
+        <Routes>
+          {" "}
+          <Route path="/auth" element={<AuthScreen setUser={setUser} />} />
+          <Route path="/chat" element={<ChatBotScreen user={user} />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

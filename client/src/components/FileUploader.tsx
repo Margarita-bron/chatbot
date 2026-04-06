@@ -17,7 +17,7 @@ function FileUploader({ file, setFile, sendMessage }: Props) {
     formData.append("filename", file.name);
     formData.append("contentType", file.type);
 
-    const res = await fetch("http://localhost:5000/api/files/upload", {
+    const res = await fetch("${API_BASE}/api/files/upload", {
       method: "POST",
       body: formData,
     });

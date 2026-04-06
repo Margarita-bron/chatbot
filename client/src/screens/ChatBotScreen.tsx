@@ -5,24 +5,28 @@ import Nav from "../components/Nav";
 import ChatUI from "../components/ChatUI";
 import "../App.css";
 import "../index.css";
-import { ChatHeader } from "../components/ChatHeader";
+import { API_BASE } from "../App";
+import { ChatInput } from "../components/ChatInput";
 
 function ChatBotScreen({ user }: { user: UserType }) {
   const [chats, setChats] = useState<ChatType[]>([]);
   const [messages, setMessages] = useState<MessageType[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [newChatTitle, setNewChatTitle] = useState("");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
     const getChats = async () => {
-      const res = await fetch(`http://localhost:5000/chats?userId=${user?.id}`);
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/chats?userId=${user?.id}`);
       if (!res.ok) {
         console.error("Error fetching chats");
         return;
       }
       const data = await res.json();
       setChats(data);
+      setLoading(false);
     };
 
     getChats();
@@ -32,15 +36,15 @@ function ChatBotScreen({ user }: { user: UserType }) {
     if (!currentChatId) return;
 
     const getMessages = async () => {
-      const res = await fetch(
-        `http://localhost:5000/chats/${currentChatId}/messages`,
-      );
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/chats/${currentChatId}/messages`);
       if (!res.ok) {
         console.error("Error fetching messages");
         return;
       }
       const data = await res.json();
       setMessages(data);
+      setLoading(false);
     };
 
     getMessages();
@@ -48,7 +52,7 @@ function ChatBotScreen({ user }: { user: UserType }) {
 
   const createChat = async () => {
     console.log(user?.id);
-    fetch(`http://localhost:5000/chats`, {
+    fetch(`${API_BASE}/chats`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -69,9 +73,9 @@ function ChatBotScreen({ user }: { user: UserType }) {
     if (!content.trim()) return;
 
     let chatId = currentChatId;
-
+    setLoading(true);
     if (!chatId) {
-      const response = await fetch(`http://localhost:5000/chats`, {
+      const response = await fetch(`${API_BASE}/chats`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -96,7 +100,7 @@ function ChatBotScreen({ user }: { user: UserType }) {
       chatId = chat.id;
     }
 
-    const res = await fetch(`http://localhost:5000/chats/${chatId}/messages`, {
+    const res = await fetch(`${API_BASE}/chats/${chatId}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: "user", content }),
@@ -113,6 +117,7 @@ function ChatBotScreen({ user }: { user: UserType }) {
     } else {
       setMessages([messages]);
     }
+    setLoading(false);
   };
 
   return (
@@ -125,7 +130,8 @@ function ChatBotScreen({ user }: { user: UserType }) {
         newChatTitle={newChatTitle}
         setNewChatTitle={setNewChatTitle}
       />
-      <ChatUI messages={messages} sendMessage={sendMessage} />
+      <ChatUI messages={messages} />
+      <ChatInput sendMessage={sendMessage} disabled={loading} />
       <FileUploader file={file} setFile={setFile} sendMessage={sendMessage} />
     </div>
   );

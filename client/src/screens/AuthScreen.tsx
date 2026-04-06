@@ -4,6 +4,7 @@ import { useForm, type Resolver } from "react-hook-form";
 import "../styles/auth.css";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { type AuthFormValues, authSchema } from "../utils/validationSchema";
+import { API_BASE } from "../App";
 
 type Mode = "login" | "register";
 
@@ -28,7 +29,7 @@ function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`http://localhost:5000/auth/${mode}`, {
+      const res = await fetch(`${API_BASE}/auth/${mode}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
