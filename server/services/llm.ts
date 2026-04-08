@@ -1,5 +1,5 @@
 import { OpenAI } from "openai";
-import { LLMMessageType } from "../types";
+import { LLMMessageType } from "../types/types";
 
 export const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,

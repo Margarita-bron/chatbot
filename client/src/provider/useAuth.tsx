@@ -1,5 +1,6 @@
 import {
   createContext,
+  useContext,
   useEffect,
   useState,
   type Dispatch,
@@ -7,7 +8,6 @@ import {
   type SetStateAction,
 } from "react";
 import type { UserType } from "../types/types";
-import { API_BASE } from "../App";
 
 export type AuthContextType = {
   user: UserType | null;
@@ -17,57 +17,71 @@ export type AuthContextType = {
 };
 export const AuthContext = createContext<AuthContextType>({
   user: null,
-  loading: true,
+  loading: false,
   logout: async () => {},
   setUser: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserType | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_BASE}/auth/me`, {
-          credentials: "include",
-        });
+    async function checkAuth() {
+      const token = localStorage.getItem("accessToken");
 
-        if (!res.ok) {
-          setUser(null);
-          return;
-        }
-
-        const userData: UserType = await res.json();
-        setUser(userData);
-      } catch (err) {
-        console.error("Auth check error:", err);
-        setUser(null);
-      } finally {
+      if (!token) {
         setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const logout = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("Logout error:", err);
         return;
       }
 
+      try {
+        console.log("checkAuth", token);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("/me", res);
+        if (!res.ok) {
+          localStorage.removeItem("accessToken");
+          setLoading(false);
+          setUser(null);
+        } else {
+          const data = await res.json();
+          console.log("User data from server:", data);
+          setUser(data);
+          console.log("/me user ", data, user);
+        }
+      } catch (err) {
+        console.error("Auth check error:", err);
+        localStorage.removeItem("accessToken");
+
+        setUser(null);
+      } finally {
+        setLoading(false);
+        console.log("/me user ", user);
+      }
+    }
+
+    checkAuth();
+  }, []);
+  useEffect(() => {
+    console.log("User state changed:", user);
+  }, [user]);
+  const logout = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        await fetch(`${import.meta.env.VITE_API_BASE}/auth/logout`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      localStorage.removeItem("accessToken");
       setUser(null);
     } catch (err) {
       console.error("Logout error:", err);
+      localStorage.removeItem("accessToken");
+      setUser(null);
     }
   };
 

@@ -17,6 +17,7 @@ function Nav({
   newChatTitle,
   setNewChatTitle,
 }: Props) {
+  console.log(chats, currentChatId);
   return (
     <aside className="w-60 h-full bg-white border-r border-gray-200 flex flex-col shadow-sm">
       <div className="p-4 bg-gradient-to-r from-blue-600 to-yellow-400 text-white flex items-center gap-2">

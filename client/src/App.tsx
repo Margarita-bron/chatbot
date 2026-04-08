@@ -3,11 +3,13 @@ import ChatBotScreen from "./screens/ChatBotScreen";
 import "./App.css";
 import "./index.css";
 import { AuthProvider, useAuth } from "./provider/useAuth";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import NotFound from "./screens/NotFound";
+import { useEffect } from "react";
+import { PublicRoute } from "./PublicRoute";
+import { ProtectedRoute } from "./ProtectedRoute";
 
-export const API_BASE = "https://chatbot-no4u.onrender.com";
-//export const API_BASE = "http://localhost:5000";
+//export const API_BASE = "https://chatbot-no4u.onrender.com";
 
 function App() {
   const { user, loading, logout, setUser } = useAuth();
@@ -36,17 +38,25 @@ function App() {
       </main>
     </div>*/
 
-    <AuthProvider>
-      {" "}
-      <BrowserRouter>
-        <Routes>
-          {" "}
-          <Route path="/auth" element={<AuthScreen setUser={setUser} />} />
-          <Route path="/chat" element={<ChatBotScreen user={user} />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <AuthScreen setUser={setUser} />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatBotScreen user={user!} />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 

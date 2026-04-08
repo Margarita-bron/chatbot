@@ -1,4 +1,4 @@
-import { UserType } from "../types";
+import { UserType } from "../types/types";
 import { supabase } from "../supabase/supabase";
 
 export async function createUser(email: string): Promise<UserType | null> {

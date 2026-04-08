@@ -1,5 +1,5 @@
 import { supabase } from "../supabase/supabase";
-import { ChatType } from "../types";
+import { ChatType } from "../types/types";
 
 export async function createChat(
   userId: string,
@@ -25,7 +25,7 @@ export async function getChatsByUserId(userId: string): Promise<ChatType[]> {
     .select("id, user_id, title, created_at, updated_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
-
+  console.log("getChatsByUserId", data);
   if (error) {
     console.error("Error fetching chats:", error.message);
     return [];

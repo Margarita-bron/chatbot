@@ -1,67 +1,109 @@
 import { useEffect, useState } from "react";
-import type { ChatType, MessageType, UserType } from "../types/types";
-import FileUploader from "../components/FileUploader";
+import type { ChatType, MessageType } from "../types/types";
 import Nav from "../components/Nav";
 import ChatUI from "../components/ChatUI";
 import "../App.css";
 import "../index.css";
-import { API_BASE } from "../App";
 import { ChatInput } from "../components/ChatInput";
+import { useAuth } from "../provider/useAuth";
+import { useNavigate } from "react-router-dom";
 
-function ChatBotScreen({ user }: { user: UserType }) {
+function ChatBotScreen() {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [chats, setChats] = useState<ChatType[]>([]);
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [newChatTitle, setNewChatTitle] = useState("");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate("/");
+      return;
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const getChats = async () => {
+      if (!user?.id || authLoading) return;
       setLoading(true);
-      const res = await fetch(`${API_BASE}/chats?userId=${user?.id}`);
-      if (!res.ok) {
-        console.error("Error fetching chats");
-        return;
+      console.log("getChats", localStorage.getItem("accessToken"));
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/chats`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        });
+        if (!res.ok) throw new Error("Error fetching chats");
+
+        const data = await res.json();
+        setChats(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      const data = await res.json();
-      setChats(data);
-      setLoading(false);
     };
 
     getChats();
-  }, [user?.id, currentChatId]);
+  }, [user?.id, authLoading]);
 
   useEffect(() => {
+    console.log("ChatBotScreen", user);
     if (!currentChatId) return;
 
     const getMessages = async () => {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/chats/${currentChatId}/messages`);
-      if (!res.ok) {
-        console.error("Error fetching messages");
-        return;
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE}/chats/${currentChatId}/messages`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+          },
+        );
+        if (!res.ok) throw new Error("Error fetching messages");
+        const data = await res.json();
+        setMessages(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      const data = await res.json();
-      setMessages(data);
-      setLoading(false);
     };
 
     getMessages();
   }, [currentChatId]);
 
   const createChat = async () => {
-    console.log(user?.id);
-    fetch(`${API_BASE}/chats`, {
+    if (!user?.id) return;
+    console.log("createChat data:", { userId: user?.id, title: newChatTitle });
+    fetch(`${import.meta.env.VITE_API_BASE}/chats`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
       body: JSON.stringify({
-        userId: user?.id,
         title: newChatTitle || "New chat",
       }),
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => {
+            console.error("Error creating chat:", res.status, err);
+            throw new Error(err.message || "Failed to create chat");
+          });
+        }
+        return res.json();
+      })
       .then((chat) => {
+        console.log(user?.id);
         setChats((prev) => [chat, ...prev]);
         setNewChatTitle("");
         setCurrentChatId(chat.id);
@@ -70,54 +112,62 @@ function ChatBotScreen({ user }: { user: UserType }) {
   };
 
   const sendMessage = async (content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim() || !user?.id) return;
 
-    let chatId = currentChatId;
     setLoading(true);
-    if (!chatId) {
-      const response = await fetch(`${API_BASE}/chats`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          title: newChatTitle || "New chat",
-        }),
-      });
 
-      if (!response.ok) {
-        console.error(
-          "Error creating chat:",
-          response.status,
-          response.statusText,
-        );
+    try {
+      let chatId = currentChatId;
+
+      if (!chatId) {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/chats`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+          body: JSON.stringify({ title: newChatTitle || "New chat" }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          console.error("Error creating chat:", errData);
+          setLoading(false);
+          return;
+        }
+
+        const newChat = await res.json();
+        setChats((prev) => [newChat, ...prev]);
+        setCurrentChatId(newChat.id);
+        chatId = newChat.id;
+        setNewChatTitle("");
+      }
+
+      const resMsg = await fetch(
+        `${import.meta.env.VITE_API_BASE}/chats/${chatId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+          body: JSON.stringify({ role: "user", content }),
+        },
+      );
+
+      if (!resMsg.ok) {
+        console.error("Error sending message:", await resMsg.text());
+        setLoading(false);
         return;
       }
 
-      const chat = await response.json();
-      setChats((prev) => [chat, ...prev]);
-      setNewChatTitle("");
-      setCurrentChatId(chat.id);
-      chatId = chat.id;
+      const messagesData = await resMsg.json();
+      setMessages(Array.isArray(messagesData) ? messagesData : [messagesData]);
+    } catch (err) {
+      console.error("sendMessage error:", err);
+    } finally {
+      setLoading(false);
     }
-
-    const res = await fetch(`${API_BASE}/chats/${chatId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "user", content }),
-    });
-
-    if (!res.ok) {
-      console.error("Server error:", res.status, res.statusText);
-      return;
-    }
-
-    const messages = await res.json();
-    if (Array.isArray(messages)) {
-      setMessages(messages);
-    } else {
-      setMessages([messages]);
-    }
-    setLoading(false);
   };
 
   return (
@@ -130,9 +180,10 @@ function ChatBotScreen({ user }: { user: UserType }) {
         newChatTitle={newChatTitle}
         setNewChatTitle={setNewChatTitle}
       />
-      <ChatUI messages={messages} />
-      <ChatInput sendMessage={sendMessage} disabled={loading} />
-      <FileUploader file={file} setFile={setFile} sendMessage={sendMessage} />
+      <div className="flex flex-col w-full">
+        <ChatUI messages={messages} />
+        <ChatInput sendMessage={sendMessage} disabled={loading} />
+      </div>
     </div>
   );
 }

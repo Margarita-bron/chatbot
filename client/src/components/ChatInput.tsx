@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { API_BASE } from "../App";
+import { X, Paperclip, Send } from "lucide-react";
 
 export function ChatInput({
   sendMessage,
@@ -42,10 +42,13 @@ export function ChatInput({
     formData.append("contentType", file.type);
 
     try {
-      const res = await fetch(`${API_BASE}/api/files/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE}/api/files/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       const { url } = await res.json();
       setImagePreview(url);
     } catch (err) {

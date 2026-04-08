@@ -1,5 +1,7 @@
 import express from "express";
 import { registerUser, loginUser, logoutUser, getUser } from "../services/auth";
+import { authMiddleware } from "../services/middleware";
+import { getUserById } from "../services/users";
 
 const router = express.Router();
 
@@ -10,13 +12,19 @@ router.post("/register", async (req, res) => {
     return res.status(400).json({ error: "Email and password required" });
   }
 
-  const { user, error } = await registerUser(email, password);
+  const { data, error } = await registerUser(email, password);
 
-  if (error) {
-    return res.status(400).json({ error: error.message });
+  if (error || !data?.session?.access_token) {
+    return res
+      .status(400)
+      .json({ error: error?.message || "Registration failed" });
   }
 
-  res.json({ user });
+  res.status(201).json({
+    user: data.user,
+    accessToken: data.session.access_token,
+    // refreshToken: data.session.refresh_token, // можно тоже вернуть
+  });
 });
 
 router.post("/login", async (req, res) => {
@@ -26,71 +34,42 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ error: "Email and password required" });
   }
 
-  const { user, error } = await loginUser(email, password);
+  const { data, error } = await loginUser(email, password);
 
-  if (error) {
-    return res.status(400).json({ error: error.message });
+  if (error || !data?.session?.access_token) {
+    return res.status(401).json({ error: error?.message });
   }
-
-  res.json({ user });
+  console.log("errrrrrrrrrrr", data.user);
+  res.json({
+    user: data.user,
+    accessToken: data.session.access_token,
+  });
 });
 
 router.post("/logout", async (req, res) => {
-  const accessToken = req.cookies.accessToken;
-
-  if (!accessToken) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader)
     return res.status(400).json({ error: "Access token required" });
-  }
 
-  const { error } = await logoutUser(accessToken);
+  const token = authHeader.split(" ")[1];
 
-  if (error) {
-    return res.status(400).json({ error: error.message });
-  }
+  const { error } = await logoutUser(token);
+  if (error) return res.status(400).json({ error: error.message });
 
   res.json({ message: "Logged out" });
 });
 
-export default router;
-
 router.get("/me", async (req, res) => {
-  const accessToken = req.cookies.accessToken;
-  console.log("Access Token:", accessToken);
+  console.log("ME ROUTE HIT");
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "Unauthorized" });
 
-  const MOCK_USER = {
-    id: "123e4567-e89b-12d3-a456-426614174000",
-    email: "mock.user@example.com",
-    aud: "authenticated",
-    role: "user",
-  };
+  const token = authHeader.split(" ")[1];
 
-  /*if (!accessToken) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const { data, error } = await getUser(accessToken);
-
-  if (error) {
-    return res.status(401).json({ error: error.message });
-  }*/
-
-  //res.json(data.user);
-  res.json(MOCK_USER);
+  const { data, error } = await getUser(token);
+  if (error || !data) return res.status(401).json({ error: error?.message });
+  console.log('r.get("/me"', data);
+  res.json(data);
 });
 
-router.post("/set-cookie", async (req, res) => {
-  const { accessToken } = req.body;
-
-  if (!accessToken) {
-    return res.status(400).json({ error: "Access token required" });
-  }
-  console.log("Setting cookie with access token:", accessToken);
-
-  res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-  });
-
-  res.json({ success: true });
-});
+export default router;

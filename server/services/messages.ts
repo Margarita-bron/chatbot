@@ -1,5 +1,5 @@
 import { supabase } from "../supabase/supabase";
-import { MessageType, LLMMessageType } from "../types";
+import { MessageType, LLMMessageType } from "../types/types";
 import { askLLM } from "./llm";
 
 export async function createMessage(

@@ -10,7 +10,6 @@
 
 .auth-toggle {
   display: flex;
-  gap: 0.5rem;
   margin-bottom: 1.5rem;
   background: rgba(255, 255, 255, 0.15);
   padding: 0.25rem;
@@ -39,10 +38,8 @@
 }
 
 .auth-form {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
   max-width: 400px;
+  height: 30vh;
   background: white;
   padding: 2rem;
   border-radius: 12px;
@@ -58,6 +55,7 @@
 
 .input-group {
   margin-bottom: 1rem;
+  width: 100%;
 }
 
 .input {

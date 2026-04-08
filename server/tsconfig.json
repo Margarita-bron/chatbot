@@ -12,8 +12,9 @@
     "moduleResolution": "node",
     "noImplicitThis": true,
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["*.ts", "types.ts"],
+  "include": ["*.ts", "types/types.ts", "types/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
