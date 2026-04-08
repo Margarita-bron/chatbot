@@ -94,7 +94,7 @@ function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
           <form
             onSubmit={handleSubmit(onSubmit)}
             noValidate
-            className="flex flex-col w-full auth-form"
+            className="flex flex-col w-full h-auto auth-form"
           >
             <div className={`${!errors.email ? "mb-7" : "mb-2"}`}>
               <input
@@ -108,7 +108,7 @@ function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
               )}
             </div>
 
-            <div>
+            <div className={`${!errors.email ? "mb-7" : "mb-2"}`}>
               <input
                 {...register("password")}
                 placeholder="Password"
@@ -131,7 +131,7 @@ function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
                   ? true
                   : false
               }
-              className="mt-auto bg-indigo-400 hover:bg-indigo-500 text-white font-bold py-2 px-4 border-b-4 border-indigo-700 hover:border-indigo-600 rounded-full"
+              className="mt-auto flex items-center justify-center bg-indigo-400 hover:bg-indigo-500 text-white font-bold py-2 px-4 border-b-4 border-indigo-700 hover:border-indigo-600 rounded-full"
             >
               {loading ? (
                 <div className="spinner"></div>

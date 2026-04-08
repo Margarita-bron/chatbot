@@ -10,7 +10,7 @@ import {
 } from "./services/messages";
 import cookieParser from "cookie-parser";
 import auth from "./routes/auth";
-import fileRouter from "./routes/files";
+import uploadRouter from "./routes/files";
 import { authMiddleware } from "./services/middleware";
 
 const allowedOrigins = ["http://localhost:5173", /^http:\/\/localhost:\d+$/];
@@ -44,7 +44,7 @@ app.use(express.json());
 
 app.use("/auth", auth);
 app.use(authMiddleware);
-app.use("/files", fileRouter);
+app.use("/files", uploadRouter);
 
 app.post("/users", async (req: Request, res: Response) => {
   const { email } = req.body as { email?: string };

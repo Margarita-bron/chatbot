@@ -7,8 +7,8 @@ type Props = {
 
 function ChatUI({ messages }: Props) {
   return (
-    <div className="flex flex-col flex-1 h-full bg-white border-r border-gray-100">
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+    <div className="flex flex-col w-full h-full overflow-y-auto flex-1 bg-white border-r border-gray-100">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 mx-auto w-full">
         {messages.length === 0 ? (
           <div className="flex flex-1 items-center justify-center p-8">
             <div className="text-center max-w-md animate-fade-in-up">
@@ -28,7 +28,7 @@ function ChatUI({ messages }: Props) {
           messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${
+              className={`flex w-full ${
                 msg.role === "user" ? "justify-end" : "justify-start"
               }`}
             >

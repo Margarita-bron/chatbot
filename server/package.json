@@ -17,10 +17,12 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.101.0",
+    "@types/multer": "^2.1.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "multer": "^2.1.1",
     "openai": "^6.33.0",
     "pg": "^8.20.0",
     "tailwind": "^4.0.0",

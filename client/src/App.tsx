@@ -17,51 +17,29 @@ function App() {
     return <div>Loading...</div>;
   }
 
-  /*if (!user) {
-    return (
-      <div className="hero-container">
-        <div className="hero-content">
-          <h1 className="hero-title">ChatBot Assistant</h1>
-          <p className="hero-subtitle">
-            Securely chat with AI, powered by Supabase and Node.js
-          </p>
-          <AuthScreen setUser={setUser} />
-        </div>
-      </div>
-    );
-  }*/
-
   return (
-    /* <div>
-      <main>
-        <ChatBotScreen user={user} />
-      </main>
-    </div>*/
-
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <PublicRoute>
-            <AuthScreen setUser={setUser} />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/chat"
-        element={
-          <ProtectedRoute>
-            <ChatBotScreen user={user!} />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <div className="w-full">
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <AuthScreen setUser={setUser} />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatBotScreen user={user!} />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
   );
 }
 
 export default App;
-/*      <header>
-        <span>Welcome, {user.email}</span>
-        <button onClick={logout}>Logout</button>
-      </header>*/

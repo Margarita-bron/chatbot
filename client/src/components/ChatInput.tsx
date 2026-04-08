@@ -42,13 +42,13 @@ export function ChatInput({
     formData.append("contentType", file.type);
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE}/api/files/upload`,
-        {
-          method: "POST",
-          body: formData,
+      const res = await fetch(`${import.meta.env.VITE_API_BASE}/files/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         },
-      );
+        body: formData,
+      });
       const { url } = await res.json();
       setImagePreview(url);
     } catch (err) {
@@ -64,8 +64,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white px-4 py-3">
-      {/* Image preview (если есть) */}
+    <div className="flex flex-col items-center border-be-transparent bg-white px-4 py-3">
       {imagePreview && (
         <div className="mb-2 flex max-w-3xl mx-auto">
           <div className="relative h-16 w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm">
@@ -92,8 +91,7 @@ export function ChatInput({
         className="hidden"
       />
 
-      <div className="flex items-end gap-2 max-w-3xl mx-auto">
-        {/* Кнопка прикрепления изображения */}
+      <div className="flex w-full mb-1 gap-3 justify-between max-w-3xl mx-auto ">
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
@@ -103,23 +101,19 @@ export function ChatInput({
           <Paperclip className="h-5 w-5" />
         </button>
 
-        {/* TextArea */}
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={"Type a message…"}
-            disabled={disabled}
-            rows={1}
-            className="w-full resize-none rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm
+        <textarea
+          ref={textareaRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={"Type a message…"}
+          disabled={disabled}
+          rows={1}
+          className="w-full resize-none rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm
                        placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500
-                       disabled:opacity-50"
-          />
-        </div>
+                       disabled:opacity-50 overflow-y-hidden"
+        />
 
-        {/* Send button */}
         <button
           onClick={handleSend}
           disabled={disabled || (!inputValue.trim() && !imagePreview)}
