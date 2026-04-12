@@ -60,7 +60,7 @@ router.post("/logout", async (req, res) => {
 });
 
 router.get("/me", async (req, res) => {
-  console.log("ME ROUTE HIT");
+  console.log("ME ROUTE HIT", req.headers.authorization);
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: "Unauthorized" });
 

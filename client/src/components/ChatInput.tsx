@@ -9,17 +9,20 @@ export function ChatInput({
   disabled: boolean;
 }) {
   const [inputValue, setInputValue] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSend = () => {
     const trimmed = inputValue.trim();
-    if (!trimmed && !imagePreview) return;
-
-    sendMessage(trimmed, imagePreview ?? undefined);
+    if (!trimmed && !filePreview) return;
+    console.log(
+      "sendMessage(trimmed, imagePreview ?? undefined);",
+      filePreview,
+    );
+    sendMessage(trimmed, filePreview ?? undefined);
     setInputValue("");
-    setImagePreview(null);
+    setFilePreview(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -34,61 +37,65 @@ export function ChatInput({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file) return;
+
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      console.log("User state file: !token");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("filename", file.name);
+    console.log("decoded name", file.name);
+    formData.append("filename", `${file.name}-${Date.now}`);
     formData.append("contentType", file.type);
-
+    console.log("handleFileChange", file);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE}/files/upload`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
       const { url } = await res.json();
-      setImagePreview(url);
+      setFilePreview(url);
     } catch (err) {
       console.error("Image upload error:", err);
     }
 
-    // reset input
     e.target.value = "";
   };
 
   const removeImage = () => {
-    setImagePreview(null);
+    setFilePreview(null);
   };
 
   return (
     <div className="flex flex-col items-center border-be-transparent bg-white px-4 py-3">
-      {imagePreview && (
-        <div className="mb-2 flex max-w-3xl mx-auto">
-          <div className="relative h-16 w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-            <img
-              src={imagePreview}
-              alt="Uploaded image"
-              className="h-full w-full object-cover rounded-lg"
-            />
-            <button
-              onClick={removeImage}
-              className="absolute top-1 right-1 h-6 w-6 rounded-full bg-gray-900/70 flex items-center justify-center"
-            >
-              <X className="h-3.5 w-3.5 text-white" />
-            </button>
-          </div>
+      {filePreview && (
+        <div className="absolute h-28 max-w-sm rounded-lg overflow-hidden border border-gray-200 shadow-sm bottom-21 flex  ">
+          <img
+            src={filePreview}
+            alt="Uploaded"
+            className="h-full w-full object-cover rounded-lg"
+          />
+          <button
+            onClick={removeImage}
+            className="absolute top-1 right-1 h-6 w-6 rounded-full bg-gray-900/70 flex items-center justify-center"
+          >
+            <X className="h-3.5 w-3.5 text-white" />
+          </button>
         </div>
       )}
 
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
         onChange={handleFileChange}
-        className="hidden"
+        className="hidden relative"
       />
 
       <div className="flex w-full mb-1 gap-3 justify-between max-w-3xl mx-auto ">
@@ -96,7 +103,7 @@ export function ChatInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          aria-label="Attach image"
+          aria-label="Attach images,files"
         >
           <Paperclip className="h-5 w-5" />
         </button>
@@ -116,7 +123,7 @@ export function ChatInput({
 
         <button
           onClick={handleSend}
-          disabled={disabled || (!inputValue.trim() && !imagePreview)}
+          disabled={disabled || (!inputValue.trim() && !filePreview)}
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           aria-label="Send message"
         >

@@ -2,7 +2,7 @@ import AuthScreen from "./screens/AuthScreen";
 import ChatBotScreen from "./screens/ChatBotScreen";
 import "./App.css";
 import "./index.css";
-import { AuthProvider, useAuth } from "./provider/useAuth";
+import { useAuth } from "./context/useAuth";
 import { Route, Routes } from "react-router-dom";
 import NotFound from "./screens/NotFound";
 import { useEffect } from "react";

@@ -245,3 +245,56 @@
     transform: rotate(360deg);
   }
 }
+
+.custom-scrollbar {
+  /* Webkit */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+    transition: background 0.2s;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(209 213 219) rgb(241 245 249);
+}
+
+@keyframes slide-down {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(-80%);
+    opacity: 1;
+  }
+  40% {
+    transform: translateY(-60%);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(-40%);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-20%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-enter {
+  animation: slide-down 0.4s ease-out forwards;
+}

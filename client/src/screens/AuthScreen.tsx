@@ -5,13 +5,15 @@ import "../styles/auth.css";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { type AuthFormValues, authSchema } from "../utils/validationSchema";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
+import { notifications } from "../utils/toastText";
 
 type Mode = "login" | "register";
 
 function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
   const [mode, setMode] = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
   const {
     register,
     handleSubmit,
@@ -27,7 +29,6 @@ function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
       return;
     }
     setLoading(true);
-    setErrorMessage(null);
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE}/auth/${mode}`, {
@@ -41,16 +42,37 @@ function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
       console.log("edgrerger", newUser);
       if (!res.ok) {
         setLoading(false);
-        setErrorMessage(newUser.error || "Something went wrong");
+        showToast(
+          {
+            title: mode === "login" ? "Login Failed" : "Registration failed",
+            description: newUser.error,
+          },
+          "error",
+        );
         return;
       }
 
       localStorage.setItem("accessToken", newUser.accessToken);
 
       setUser(newUser.user);
+      const notif =
+        mode === "login" ? "Login Successful" : "Registration Successful";
+      showToast(
+        {
+          title: notif,
+          description: notifications[notif].description,
+        },
+        "success",
+      );
       navigate("/chat");
     } catch (err) {
-      setErrorMessage(`Network error:${err}`);
+      showToast(
+        {
+          title: "Network error",
+          description: String(err),
+        },
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -119,10 +141,6 @@ function AuthScreen({ setUser }: { setUser: (user: UserType | null) => void }) {
                 <p className="error-message">{errors.password.message}</p>
               )}
             </div>
-
-            {errorMessage && (
-              <p className="error-message server-error">{errorMessage}</p>
-            )}
 
             <button
               type="submit"

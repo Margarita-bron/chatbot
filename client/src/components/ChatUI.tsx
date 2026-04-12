@@ -7,8 +7,8 @@ type Props = {
 
 function ChatUI({ messages }: Props) {
   return (
-    <div className="flex flex-col w-full h-full overflow-y-auto flex-1 bg-white border-r border-gray-100">
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 mx-auto w-full">
+    <div className="flex relative flex-col w-full h-full overflow-hidden flex-1 bg-white border-r border-gray-100">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 mx-auto w-full custom-scrollbar scrollbar-thin">
         {messages.length === 0 ? (
           <div className="flex flex-1 items-center justify-center p-8">
             <div className="text-center max-w-md animate-fade-in-up">
@@ -33,13 +33,34 @@ function ChatUI({ messages }: Props) {
               }`}
             >
               <div
-                className={`max-w-[80%] px-4 py-2.5 text-sm rounded-2xl leading-snug ${
+                className={`flex flex-col h-full max-w-[80%] px-4 py-2.5 text-sm rounded-2xl leading-relaxed break-words overflow-wrap-anywhere word-break-break-all [overflow-wrap:anywhere] items-start ${
                   msg.role === "user"
                     ? "bg-blue-600 text-white rounded-tr-none"
                     : "bg-gray-100 text-gray-800 rounded-tl-none"
                 }`}
               >
-                {msg.content}
+                {msg.image_url && (
+                  <img
+                    src={msg.image_url}
+                    alt="image"
+                    className="h-full w-50 object-cover rounded-lg"
+                  />
+                )}
+
+                <div
+                  className="w-full prose prose-sm max-w-none text-start break-words [word-break:break-all] [overflow-wrap:anywhere] [&_strong]:inline [&_strong]:font-semibold [&_em]:italic"
+                  dangerouslySetInnerHTML={{
+                    __html: `<p>${msg.content
+                      .replace(/\n/g, "</p><p>")
+                      .replace(/<\/p><p>/g, "<br>")}</p>`.replace(
+                      /\*\*(.*?)\*\*/g,
+                      "<strong>$1</strong>".replace(
+                        /\*(.*?)\*/g,
+                        "<em>$1</em>",
+                      ),
+                    ),
+                  }}
+                />
               </div>
             </div>
           ))

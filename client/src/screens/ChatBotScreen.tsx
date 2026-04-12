@@ -5,7 +5,7 @@ import ChatUI from "../components/ChatUI";
 import "../App.css";
 import "../index.css";
 import { ChatInput } from "../components/ChatInput";
-import { useAuth } from "../provider/useAuth";
+import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 
 function ChatBotScreen() {
@@ -111,8 +111,9 @@ function ChatBotScreen() {
       .catch((err) => console.error("Error creating chat:", err));
   };
 
-  const sendMessage = async (content: string) => {
-    if (!content.trim() || !user?.id) return;
+  const sendMessage = async (content: string, imageUrl?: string) => {
+    if (!user?.id) return;
+    if (!content.trim() && !imageUrl) return;
 
     setLoading(true);
 
@@ -142,7 +143,7 @@ function ChatBotScreen() {
         chatId = newChat.id;
         setNewChatTitle("");
       }
-
+      console.log("SEND MESSAGE BODY:", { role: "user", content, imageUrl });
       const resMsg = await fetch(
         `${import.meta.env.VITE_API_BASE}/chats/${chatId}/messages`,
         {
@@ -151,7 +152,8 @@ function ChatBotScreen() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
-          body: JSON.stringify({ role: "user", content }),
+
+          body: JSON.stringify({ role: "user", content, imageUrl }),
         },
       );
 

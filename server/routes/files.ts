@@ -13,25 +13,35 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const filename = file.originalname;
-    const contentType = file.mimetype;
+    const timestamp = Date.now();
+    const ext = file.originalname.split(".").pop()?.toLowerCase() || "file";
+    const safeName = file.originalname
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]/g, "_")
+      .replace(/_{2,}/g, "_")
+      .substring(0, 50);
+
+    const filename = `${timestamp}_${safeName}.${ext}`;
+
     console.log("req.file:", file);
     const { data, error } = await supabase.storage
-      .from("files")
+      .from("chatbot")
       .upload(filename, file.buffer, {
-        contentType,
+        contentType: file.mimetype,
         upsert: true,
       });
-
-    if (error) {
+    console.log(
+      'supabase.storage.from("files")upload(filename, file.buffe',
+      data,
+    );
+    if (error || !data) {
       return res.status(400).json({ error: error.message });
     }
-
     const { data: publicUrlData } = supabase.storage
-      .from("uploads")
+      .from("chatbot")
       .getPublicUrl(data.path);
 
-    res.json({ url: publicUrlData.publicUrl });
+    res.json({ url: publicUrlData.publicUrl, name: filename });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Upload failed" });

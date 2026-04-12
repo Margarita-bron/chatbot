@@ -8,6 +8,7 @@ import {
   type SetStateAction,
 } from "react";
 import type { UserType } from "../types/types";
+import { useToast } from "./ToastContext";
 
 export type AuthContextType = {
   user: UserType | null;
@@ -24,38 +25,55 @@ export const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserType | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
+    setLoading(true);
     async function checkAuth() {
       const token = localStorage.getItem("accessToken");
 
       if (!token) {
         setLoading(false);
+        console.log("User state changed: !token", user, loading);
         return;
       }
 
       try {
-        console.log("checkAuth", token);
         const res = await fetch(`${import.meta.env.VITE_API_BASE}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("/me", res);
-        if (!res.ok) {
+
+        if (res.status === 401) {
+          console.warn("error 401 reauthorize");
           localStorage.removeItem("accessToken");
           setLoading(false);
           setUser(null);
-        } else {
-          const data = await res.json();
-          console.log("User data from server:", data);
-          setUser(data);
-          console.log("/me user ", data, user);
+          return;
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
-        localStorage.removeItem("accessToken");
 
-        setUser(null);
+        if (!res.ok) {
+          showToast(
+            {
+              title: "Server error",
+              description: '"Server error, but token kept"',
+            },
+            "error",
+          );
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        showToast(
+          {
+            title: "Network error, keeping token",
+            description: String(err),
+          },
+          "error",
+        );
       } finally {
         setLoading(false);
         console.log("/me user ", user);

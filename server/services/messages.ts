@@ -6,11 +6,12 @@ export async function createMessage(
   chatId: string | string[],
   role: "user" | "assistant",
   content: string | null,
+  imageUrl?: string | null,
 ): Promise<MessageType | null> {
   const { data, error } = await supabase
     .from("messages")
-    .insert([{ chat_id: chatId, role, content }])
-    .select("id, chat_id, role, content, created_at, updated_at")
+    .insert([{ chat_id: chatId, role, content, image_url: imageUrl }])
+    .select("id, chat_id, role, content, image_url, created_at, updated_at")
     .single<MessageType>();
 
   if (error) {
@@ -26,7 +27,7 @@ export async function getMessagesByChatId(
 ): Promise<MessageType[]> {
   const { data, error } = await supabase
     .from("messages")
-    .select("id, chat_id, role, content, created_at, updated_at")
+    .select("*")
     .eq("chat_id", chatId)
     .order("created_at", { ascending: true });
 
@@ -34,18 +35,17 @@ export async function getMessagesByChatId(
     console.error("Error fetching messages by chat ID:", error.message);
     return [];
   }
-  console.log("getMessagesByChatId", data);
+  console.log("getMessagesByChatId", data, data[0].image_url);
   return data;
 }
 
 export async function generateAssistantMessage(
   chatId: string | string[],
-  imageUrl?: string,
 ): Promise<string | null> {
   console.log("generateAssistantMessage chatId:", chatId);
   const { data, error } = await supabase
     .from("messages")
-    .select("role, content")
+    .select("role, content,image_url")
     .eq("chat_id", chatId)
     .order("created_at");
 
@@ -53,29 +53,32 @@ export async function generateAssistantMessage(
     console.error("Error fetching chat history:", error);
     return null;
   }
-  const textMessages = data
-    .filter(
-      (msg) => typeof msg.content === "string" && msg.content.trim() !== "",
-    )
-    .slice(-5);
+  const lastMessages = data.slice(-6);
   const llmMessages: LLMMessageType[] = [
     {
       role: "system",
       content: "You are a helpful assistant.",
     },
-    ...textMessages.map((msg) => ({
-      role: msg.role === "user" ? ("user" as const) : ("assistant" as const),
-      content: msg.content,
-    })),
+    ...lastMessages.map((msg) => {
+      console.log("generateAssistantMessage llmMessages", msg.image_url);
+      if (msg.image_url) {
+        return {
+          role: msg.role as "user" | "assistant",
+          content: [
+            { type: "text", text: msg.content || "" },
+            { type: "image_url", image_url: { url: msg.image_url } },
+          ],
+        };
+      }
+
+      return {
+        role: msg.role as "user" | "assistant",
+        content: msg.content || "",
+      };
+    }),
   ];
-  if (imageUrl) {
-    llmMessages.push({
-      role: "user" as const,
-      content: `Analyze this image: ${imageUrl}`,
-    });
-  }
+  console.log("generateAssistantMessage llmMessages", llmMessages);
   const assistantContent = await askLLM(llmMessages);
-  console.log("assistantContent", assistantContent);
 
   return assistantContent!;
 }

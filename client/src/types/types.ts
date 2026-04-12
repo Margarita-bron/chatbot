@@ -18,5 +18,6 @@ export type MessageType = {
   chat_id: string;
   role: "user" | "assistant";
   content: string;
+  image_url: string | null;
   created_at: Date;
 };

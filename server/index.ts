@@ -115,13 +115,13 @@ app.post("/chats/:id/messages", async (req: Request, res: Response) => {
   const { role, content, imageUrl } = req.body;
 
   console.log("/chats/:id/messages", role, content, imageUrl);
-  const userMsg = await createMessage(id, role as "user", content);
+  const userMsg = await createMessage(id, role as "user", content, imageUrl);
 
   if (!userMsg) {
     return res.status(400).json({ error: "Unable to create user message" });
   }
 
-  const assistantContent = await generateAssistantMessage(id, imageUrl);
+  const assistantContent = await generateAssistantMessage(id);
 
   const assistantMsg = await createMessage(id, "assistant", assistantContent);
 
