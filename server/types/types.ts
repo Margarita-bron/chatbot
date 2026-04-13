@@ -35,3 +35,5 @@ export type MessageType = {
   image_url: string | null;
   created_at: string;
 };
+
+export const ImageTypes = [".jpg", ".jpeg", ".png", ".gif", ".svg", ".tif"];

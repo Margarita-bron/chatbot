@@ -15,15 +15,10 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 
     const timestamp = Date.now();
     const ext = file.originalname.split(".").pop()?.toLowerCase() || "file";
-    const safeName = file.originalname
-      .toLowerCase()
-      .replace(/[^a-z0-9.-]/g, "_")
-      .replace(/_{2,}/g, "_")
-      .substring(0, 50);
-
-    const filename = `${timestamp}_${safeName}.${ext}`;
+    const filename = `${timestamp}_${file.size}.${ext}`;
 
     console.log("req.file:", file);
+
     const { data, error } = await supabase.storage
       .from("chatbot")
       .upload(filename, file.buffer, {
@@ -41,7 +36,11 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       .from("chatbot")
       .getPublicUrl(data.path);
 
-    res.json({ url: publicUrlData.publicUrl, name: filename });
+    res.json({
+      url: publicUrlData.publicUrl,
+      mimeType: file.mimetype,
+      size: file.size,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Upload failed" });

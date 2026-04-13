@@ -5,11 +5,14 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: "https://openrouter.ai/api/v1",
 });
-
-export async function askLLM(prompt: LLMMessageType[]): Promise<string | null> {
-  console.log("askLLM prompt", prompt);
+//openai/gpt-5.3-chat  openai/gpt-5.3-codex text img
+export async function askLLM(
+  prompt: LLMMessageType[],
+  model: string = "gpt-4o-mini",
+): Promise<string | null> {
+  console.log(model);
   const completion = await openai.chat.completions.create({
-    model: "openai/gpt-4o",
+    model,
     messages: prompt,
     max_tokens: 2000,
   });

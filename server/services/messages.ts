@@ -1,6 +1,7 @@
 import { supabase } from "../supabase/supabase";
-import { MessageType, LLMMessageType } from "../types/types";
+import { MessageType, LLMMessageType, ImageTypes } from "../types/types";
 import { askLLM } from "./llm";
+import mammoth from "mammoth";
 
 export async function createMessage(
   chatId: string | string[],
@@ -54,30 +55,57 @@ export async function generateAssistantMessage(
     return null;
   }
   const lastMessages = data.slice(-6);
-  const llmMessages: LLMMessageType[] = [
-    {
-      role: "system",
-      content: "You are a helpful assistant.",
-    },
-    ...lastMessages.map((msg) => {
-      console.log("generateAssistantMessage llmMessages", msg.image_url);
-      if (msg.image_url) {
+  const lastUserMessage = [...data].reverse().find((m) => m.role === "user");
+  const isImage = (url?: string | null) =>
+    !!url && /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+
+  const isDoc = (url?: string | null) =>
+    !!url && /\.(pdf|docx|txt|xlsx)$/i.test(url);
+
+  const processedMessages = await Promise.all(
+    data.map(async (msg) => {
+      const url = msg.image_url;
+
+      if (isDoc(url)) {
+        const res = await fetch(url!);
+        const buffer = await res.arrayBuffer();
+
+        const result = await mammoth.extractRawText({
+          buffer: Buffer.from(buffer),
+        });
+        console.log(result.value);
         return {
-          role: msg.role as "user" | "assistant",
+          role: msg.role,
+          content: `${msg.content || ""}\n\n${result.value}`,
+        };
+      }
+
+      if (isImage(url)) {
+        return {
+          role: msg.role,
           content: [
             { type: "text", text: msg.content || "" },
-            { type: "image_url", image_url: { url: msg.image_url } },
+            { type: "image_url", image_url: { url } },
           ],
         };
       }
 
       return {
-        role: msg.role as "user" | "assistant",
+        role: msg.role,
         content: msg.content || "",
       };
     }),
+  );
+
+  const llmMessages = [
+    { role: "system", content: "You are a helpful assistant." },
+    ...processedMessages,
   ];
-  console.log("generateAssistantMessage llmMessages", llmMessages);
+
+  console.log(
+    "generateAssistantMessage llmMessages",
+    JSON.stringify(llmMessages),
+  );
   const assistantContent = await askLLM(llmMessages);
 
   return assistantContent!;

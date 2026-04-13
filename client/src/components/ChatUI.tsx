@@ -1,5 +1,5 @@
 import type { MessageType } from "../types/types";
-import { Sparkles, MessageSquare, Zap } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 type Props = {
   messages: MessageType[];
@@ -13,12 +13,14 @@ function ChatUI({ messages }: Props) {
           <div className="flex flex-1 items-center justify-center p-8">
             <div className="text-center max-w-md animate-fade-in-up">
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                <Sparkles className="h-8 w-8 text-primary" />
+                <Sparkles className="h-8 w-8 text-primary fill-amber-300 stroke-amber-950" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">AI Chatbot</h1>
+              <h1 className="!text-blue-700 text-2xl font-bold mb-2">
+                AI Chatbot
+              </h1>
               <p className="text-muted-foreground mb-8">
-                Your intelligent assistant. Ask anything, upload images, and get
-                instant answers.
+                Your intelligent assistant. Ask anything, upload images, docs
+                and get instant answers.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left"></div>

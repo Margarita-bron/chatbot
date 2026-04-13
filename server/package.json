@@ -5,10 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/index.js",
+    "start/dist": "node dist/index.js",
     "build": "tsc",
-    "dev": "ts-node-dev index.ts",
-    "devv": "ts-node index.ts"
+    "devv": "ts-node index.ts",
+      "start": "node index.js",
+  "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "mammoth": "^1.12.0",
     "multer": "^2.1.1",
     "openai": "^6.33.0",
     "pg": "^8.20.0",

@@ -1,5 +1,8 @@
 import { useState, useRef } from "react";
 import { X, Paperclip, Send } from "lucide-react";
+import { useToast } from "../context/ToastContext";
+
+const MAX_FILE_SIZE_MB = 50;
 
 export function ChatInput({
   sendMessage,
@@ -9,18 +12,28 @@ export function ChatInput({
   disabled: boolean;
 }) {
   const [inputValue, setInputValue] = useState("");
-  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [filePreview, setFilePreview] = useState<{
+    url: string;
+    name: string;
+    type: string;
+  } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const { showToast } = useToast();
 
   const handleSend = () => {
+    if (uploading) {
+      console.log("Файл ещё загружается");
+      return;
+    }
     const trimmed = inputValue.trim();
     if (!trimmed && !filePreview) return;
     console.log(
       "sendMessage(trimmed, imagePreview ?? undefined);",
       filePreview,
     );
-    sendMessage(trimmed, filePreview ?? undefined);
+    sendMessage(trimmed || "", filePreview?.url ?? undefined);
     setInputValue("");
     setFilePreview(null);
     if (textareaRef.current) {
@@ -48,10 +61,7 @@ export function ChatInput({
 
     const formData = new FormData();
     formData.append("file", file);
-    console.log("decoded name", file.name);
-    formData.append("filename", `${file.name}-${Date.now}`);
-    formData.append("contentType", file.type);
-    console.log("handleFileChange", file);
+    setUploading(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE}/files/upload`, {
         method: "POST",
@@ -60,10 +70,32 @@ export function ChatInput({
         },
         body: formData,
       });
-      const { url } = await res.json();
-      setFilePreview(url);
+      const { url, mimeType, size } = await res.json();
+
+      if (
+        size > MAX_FILE_SIZE_MB * 1024 &&
+        /\.(pdf|docx|txt|xlsx)$/i.test(url)
+      ) {
+        showToast(
+          {
+            title: "File is too large (max 50KB)",
+            description:
+              "AI Chatbot currently doesn't support files larger than 2MB. Please reduce the size or select a smaller file.",
+          },
+          "info",
+        );
+        return;
+      }
+
+      setFilePreview({
+        url: url,
+        name: file.name,
+        type: mimeType,
+      });
     } catch (err) {
       console.error("Image upload error:", err);
+    } finally {
+      setUploading(false);
     }
 
     e.target.value = "";
@@ -73,21 +105,53 @@ export function ChatInput({
     setFilePreview(null);
   };
 
+  //const isImage = filePreview?.type.startsWith("image/");
+  const ext = filePreview?.name.split(".").pop()?.toLowerCase();
+  const iconMap: Record<string, React.ReactNode> = {
+    pdf: "📄",
+    doc: "📝",
+    docx: "📝",
+    ppt: "📊",
+    pptx: "📊",
+    xls: "📈",
+    xlsx: "📈",
+    zip: "📦",
+    txt: "📄",
+  };
+
   return (
     <div className="flex flex-col items-center border-be-transparent bg-white px-4 py-3">
       {filePreview && (
-        <div className="absolute h-28 max-w-sm rounded-lg overflow-hidden border border-gray-200 shadow-sm bottom-21 flex  ">
-          <img
-            src={filePreview}
-            alt="Uploaded"
-            className="h-full w-full object-cover rounded-lg"
-          />
-          <button
-            onClick={removeImage}
-            className="absolute top-1 right-1 h-6 w-6 rounded-full bg-gray-900/70 flex items-center justify-center"
-          >
-            <X className="h-3.5 w-3.5 text-white" />
-          </button>
+        <div className="mb-3 w-full max-w-2xl">
+          <div className="relative h-24 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex items-center px-4 hover:shadow-md transition-all">
+            {ext ? (
+              <img
+                src={filePreview.url}
+                alt="Preview"
+                className="h-20 w-20 object-cover rounded-lg mr-4 flex-shrink-0"
+              />
+            ) : (
+              <div className="h-20 w-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 shadow-inner">
+                <span className="text-2xl">{iconMap[ext!] || "📎"}</span>
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0 pr-12">
+              <p className="font-medium text-sm text-gray-900 truncate">
+                {filePreview.name}
+              </p>
+              <p className="text-xs text-gray-500 capitalize">
+                {String(filePreview.type).split("/")[1] || "file"}
+              </p>
+            </div>
+
+            <button
+              onClick={removeImage}
+              className="absolute top-1 right-1 h-6 w-6 rounded-full bg-gray-900/70 flex items-center justify-center"
+            >
+              <X className="h-3.5 w-3.5 text-white" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -101,7 +165,7 @@ export function ChatInput({
       <div className="flex w-full mb-1 gap-3 justify-between max-w-3xl mx-auto ">
         <button
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
+          disabled={disabled || uploading}
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Attach images,files"
         >

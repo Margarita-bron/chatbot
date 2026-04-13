@@ -153,7 +153,11 @@ function ChatBotScreen() {
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
 
-          body: JSON.stringify({ role: "user", content, imageUrl }),
+          body: JSON.stringify({
+            role: "user",
+            content,
+            imageUrl: imageUrl ?? null,
+          }),
         },
       );
 
