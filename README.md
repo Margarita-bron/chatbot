@@ -25,3 +25,4 @@ Clone of ChatGPT-like chatbot interface with OpenRouter API using Supabase
 - Auth: Supabase
 - Realtime updates: Supabase Realtime
 - API: OpenRouter API(openai models)
+- Routing: React Router 7
